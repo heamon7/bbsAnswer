@@ -27,7 +27,7 @@ class AnswerPipeline(object):
             user = Users()
             queryAnswer = Query(Answers)
             queryUser = Query(Users)
-            queryAnswer.equal_to('questionLink',item['questionLinkList'][index])
+            queryAnswer.equal_to('questionLink',item['questionLink'])
             queryAnswer.equal_to('userId',item['userIdList'][index])
             queryAnswer.equal_to('answerTime',item['answerTimeList'][index])
             try:

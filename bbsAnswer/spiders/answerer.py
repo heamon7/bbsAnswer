@@ -40,29 +40,30 @@ class AnswererSpider(scrapy.Spider):
         queryTimes = questionCount/queryLimit + 1
         self.urls = []
 
-        for index in range(queryTimes):
-            query = Query(Questions)
-            query.exists('questionLink')
-            query.less_than('createdAt',curTime)
-            query.descending('createdAt')
-            query.limit(queryLimit)
-            query.skip(index*queryLimit)
-            query.select('questionLink')
-            quesRet = query.find()
-            for ques in quesRet:
-                self.urls.append(self.baseUrl + ques.get('questionLink'))
+     #   for index in range(queryTimes):
+      #      query = Query(Questions)
+      #      query.exists('questionLink')
+      #      query.less_than('createdAt',curTime)
+      #      query.descending('createdAt')
+      #      query.limit(queryLimit)
+      #      query.skip(index*queryLimit)
+      #      query.select('questionLink')
+      #      quesRet = query.find()
+      #      for ques in quesRet:
+      #          self.urls.append(self.baseUrl + ques.get('questionLink'))
         pass
 
 
     def start_requests(self):
         print "start_requests ing ......"
         self.urls = ['http://bbs.byr.cn/article/Python/2735','http://bbs.byr.cn/article/Python/2145']
-        print self.urls
+        #print self.urls
         for url in self.urls:
             yield Request(url,callback = self.parse)
 
     def parse(self, response):
         #inspect_response(response,self)
+	print "parsing....."
         try:
             totalPageNum = int(response.xpath('//div[@class="t-pre-bottom"]//ul[@class="pagination"]//ol[@class="page-main"]/li[last()-1]/a/text()').extract()[0])
         except:
@@ -73,6 +74,7 @@ class AnswererSpider(scrapy.Spider):
       #  print item['sectionListLink']
 
     def parseAnswer(self,response):
+	print "parseAnswering......"
         item = BbsanswerItem()
 
         content = response.xpath('//div[@class="b-content corner"]')
