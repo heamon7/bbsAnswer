@@ -23,4 +23,4 @@ class BbsanswerItem(scrapy.Item):
     userScoreList = scrapy.Field()
     answerTimeList = scrapy.Field()
     answerIpList = scrapy.Field()
-    answerContent = scrapy.Field()
+    answerContentList = scrapy.Field()

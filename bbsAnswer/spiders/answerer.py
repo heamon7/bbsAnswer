@@ -4,10 +4,12 @@ from scrapy.shell import inspect_response
 from scrapy.http import Request,FormRequest
 
 import re
+
 import leancloud
 from leancloud import Object
 from leancloud import LeanCloudError
 from leancloud import Query
+
 from scrapy import log
 from datetime import datetime
 from scrapy.exceptions import DropItem
@@ -49,32 +51,34 @@ class AnswererSpider(scrapy.Spider):
             quesRet = query.find()
             for ques in quesRet:
                 self.urls.append(self.baseUrl + ques.get('questionLink'))
-
+        pass
 
 
     def start_requests(self):
         print "start_requests ing ......"
+        self.urls = ['http://bbs.byr.cn/article/Python/2735','http://bbs.byr.cn/article/Python/2145']
         print self.urls
         for url in self.urls:
-            yield Request(url,callback = self.parseQuestion)
+            yield Request(url,callback = self.parse)
 
-    # def parse(self, response):
-    #
-    #     try:
-    #         totalPageNum = response.xpath('//div[@class="t-pre-bottom"]//ul[@class="pagination"]//ol[@class="page-main"]/li[last()-1]/a/text()').extract()
-    #     except:
-    #         totalPageNum = response.xpath('//div[@class="t-pre-bottom"]//ul[@class="pagination"]//ol[@class="page-main"]/li[last()]/a/text()').extract()
-    #
-    #     for index in range(1,totalPageNum+1):
-    #         yield Request(response.url+'?p=' +str(index),callback = self.parsePage)
-    #   #  print item['sectionListLink']
+    def parse(self, response):
+        #inspect_response(response,self)
+        try:
+            totalPageNum = int(response.xpath('//div[@class="t-pre-bottom"]//ul[@class="pagination"]//ol[@class="page-main"]/li[last()-1]/a/text()').extract()[0])
+        except:
+            totalPageNum = int(response.xpath('//div[@class="t-pre-bottom"]//ul[@class="pagination"]//ol[@class="page-main"]/li[last()]/a/text()').extract()[0])
 
-    def parseQuestion(self,response):
+        for index in range(1,totalPageNum+1):
+            yield Request(response.url+'?p=' +str(index),callback = self.parseAnswer)
+      #  print item['sectionListLink']
+
+    def parseAnswer(self,response):
         item = BbsanswerItem()
 
         content = response.xpath('//div[@class="b-content corner"]')
         item['questionLink'] = '/article'+re.split('article/(\w*/\d*)',response.url)[1]
         item['answerPageNum'] = re.split('p=(\d*)',response.url)[1]
+
         item['floorNumList'] = content.xpath('//a[@name]/@name').extract()
         item['answerPositionList'] = content.xpath('//div[@class="a-wrap corner"]//tr[@class="a-head"]//span[@class="a-pos"]/text()').extract()
         item['userIdList'] = content.xpath('//div[@class="a-wrap corner"]//tr[@class="a-head"]//span[@class="a-u-name"]//text()').extract()
@@ -87,15 +91,16 @@ class AnswererSpider(scrapy.Spider):
 
         item['answerTimeList'] = []
         item['answerIpList'] =[]
-        item['answerContent'] = []
+        item['answerContentList'] = []
 
-        for index ,sel in enumerate(content.xpath('//div[@class="a-wrap corner"]')):
-            answerTime = sel.xpath('//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[2].re('(\w* \w* \d* \d*:\d*:\d* \d*)')[0]
+        for index ,sel in enumerate(item['floorNumList']):
+            answerTime = content.xpath('//div[@class="a-wrap corner"]'+'['+str(index+1)+']'+'//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[2].re('(\w*\s*\w*\s*\d*\s*\d*:\d*:\d*\s*\d*)')[0]
             item['answerTimeList'].append(answerTime)
-            answerIp = sel.xpath('//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[-1].re('(\d*\.\d*\.\d*\.\*)')[0]
+            answerIp = content.xpath('//div[@class="a-wrap corner"]'+'['+str(index+1)+']'+'//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[-1].re('(\d*\.\d*\.\d*\.\*)')[0]
             item['answerIpList'].append(answerIp)
-            answerContent = sel.xpath('/tr[@class="a-body"]//td[@class="a-content"]//div//text()')[3:-4].extract()
-            item['answerContent'].append(answerContent)
+            answerContent = content.xpath('//div[@class="a-wrap corner"]'+'['+str(index+1)+']'+'//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[3:-4].extract()
+            item['answerContentList'].append(answerContent)
 
         return item
 
+# content.xpath('//div[@class="a-wrap corner"]'+'['+str(index+1)+']'+'//tr[@class="a-body"]//td[@class="a-content"]//div//text()')[3:-4].extract()
